@@ -1,4 +1,6 @@
-# Login Site
+git add README.md
+git commit -m "Update README"
+git push# Login Site
 
 A simple register and login website with email/password and Google sign-in.
 
