@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f8fafc;
+      color: #1e293b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .auth-container {
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 440px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+    }
+    .header-banner {
+      background-color: #0d5c3d;
+      color: #ffffff;
+      padding: 30px 24px;
+      text-align: center;
+    }
+    .header-banner h1 {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .form-body { padding: 28px 24px; }
+    #googleBtn {
+      display: flex;
+      justify-content: center;
+      min-height: 44px;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 20px 0;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .divider span {
+      padding: 0 12px;
+      font-weight: 500;
+      color: #64748b;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      background-color: #10b981;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 4px;
+      transition: background-color 0.2s;
+    }
+    .btn-submit:hover { background-color: #059669; }
+    #msg {
+      font-size: 14px;
+      margin-top: 12px;
+      text-align: center;
+      min-height: 20px;
+    }
+    #msg.ok { color: #059669; }
+    #msg.err { color: #ef4444; }
+    .register-prompt {
+      font-size: 14px;
+      color: #475569;
+      margin-top: 14px;
+      text-align: center;
+    }
+    .register-prompt a {
+      color: #0d5c3d;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .register-prompt a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="auth-container">
+    <div class="header-banner">
+      <h1>Login</h1>
+    </div>
+
+    <div class="form-body">
+      <div id="googleBtn"></div>
+
+      <div class="divider">
+        <span>Or Login with Email</span>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" placeholder="name@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Your password" required>
+        </div>
+        <button type="submit" class="btn-submit">Login</button>
+      </form>
+
+      <p id="msg"></p>
+
+      <div class="register-prompt">
+        No account? <a href="register.html">Register</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const GOOGLE_CLIENT_ID = '760051134655-p0oqgkhrajdsq12cef6qharpj1vdrum0.apps.googleusercontent.com';
+  const msg = document.getElementById('msg');
+
+  function show(text, ok) {
+    msg.textContent = text;
+    msg.className = ok ? 'ok' : 'err';
+  }
+
+  // Google sign-in button
+  function initGoogle() {
+    if (typeof google === 'undefined' || !google.accounts) {
+      setTimeout(initGoogle, 300);
+      return;
+    }
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('googleBtn'),
+      { theme: 'outline', size: 'large', width: 340, text: 'signin_with' }
+    );
+  }
+  window.addEventListener('load', initGoogle);
+
+  async function handleGoogleCredential(response) {
+    try {
+      const res = await fetch('/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        show(data.message + ': Welcome, ' + data.name, true);
+      } else {
+        show(data.error, false);
+      }
+    } catch (err) {
+      show('Cannot reach server. Is node server.js running?', false);
+    }
+  }
+
+  // Email login
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('email').value.trim(),
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        show('Welcome, ' + data.name, true);
+      } else {
+        show(data.error, false);
+      }
+    } catch (err) {
+      show('Cannot reach server. Is node server.js running?', false);
+    }
+  });
+</script>
+
+</body>
+</html>
